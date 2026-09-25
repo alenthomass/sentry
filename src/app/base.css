@@ -1,0 +1,18 @@
+
+  html, body { margin:0; min-height:100%; background:#EFE9FA; font-family:'Manrope',-apple-system,sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:#8552FF; text-decoration:none; }
+  a:hover { color:#6B36F0; }
+  ::-webkit-scrollbar { width:0; height:0; }
+  @keyframes scIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  @keyframes sheetUp { from { transform:translateY(100%); } to { transform:none; } }
+  @keyframes dim { from { opacity:0; } to { opacity:1; } }
+  @keyframes toastIn { from { opacity:0; transform:translateY(12px) scale(0.98); } to { opacity:1; transform:none; } }
+  @keyframes drawLine { from { stroke-dashoffset:520; } to { stroke-dashoffset:0; } }
+  @keyframes sweep { from { stroke-dasharray:0 400; } }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes blip { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.35); opacity:0.75; } }
+  [style*="cursor: pointer"] { -webkit-tap-highlight-color:transparent; transition:opacity .15s ease, filter .15s ease; }
+  [style*="cursor: pointer"]:active { opacity:.72; }
+  @media (hover: hover) { [style*="cursor: pointer"]:hover { filter:brightness(0.97); } }
+  @media (prefers-reduced-motion: reduce) { * { animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
