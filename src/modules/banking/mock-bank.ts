@@ -203,6 +203,15 @@ export function cardStatement(connection: BankConnection, fromIso: string, toIso
       }
     });
 
+    if (isMainCard) {
+      (student.manualPayments || []).filter(function (payment) { return payment.date === isoDate; }).forEach(function (payment) {
+        lines.push({
+          id: connection.id + ':' + isoDate + ':card:' + payment.id, date: isoDate, direction: 'debit', amount: payment.amount,
+          currency: student.currencyCode, description: String(payment.note || 'CARD PAYMENT').toUpperCase(), merchantCode: null
+        });
+      });
+    }
+
     if (isMainCard && dayOfMonth === 3 && student.usualTransfer) {
       lines.push({
         id: connection.id + ':' + isoDate + ':topup', date: isoDate, direction: 'credit', amount: student.usualTransfer,
@@ -216,22 +225,37 @@ export function cardStatement(connection: BankConnection, fromIso: string, toIso
 
 
 // ── START: Account Aggregator statement for a bank in India ────────────────
+function monthlyFamilyTransfer(student: StudentFeed, month: string) {
+  var livingCosts = (student.usualTransfer || 0) * (student.rupeeRate || 0);
+  var emisThisMonth = sumOf((student.loans || []).map(function (loan) {
+    return sumOf(loan.payments.filter(function (payment) { return payment.date.slice(0, 7) === month; }).map(function (payment) { return payment.amount; }));
+  }));
+  return Math.max(50000, Math.ceil((livingCosts * 1.02 + emisThisMonth + 5000) / 5000) * 5000);
+}
+
 export function indianStatement(connection: BankConnection, fromIso: string, toIso: string, student: StudentFeed): BankLine[] {
   var lines = [];
   var fundedByLoan = student.funding === 'Education loan';
   var university = String(student.university || 'UNIVERSITY').toUpperCase();
+  var fromDate = parseIsoDate(fromIso);
+  var yearStartIso = toIsoDate(new Date(fromDate.getMonth() >= 3 ? fromDate.getFullYear() : fromDate.getFullYear() - 1, 3, 1));
 
-  everyDayBetween(fromIso, toIso).forEach(function (date) {
+  everyDayBetween(yearStartIso, toIso).forEach(function (date) {
     var isoDate = toIsoDate(date);
     var dayOfMonth = date.getDate();
     var month = date.getMonth();
     if (dayOfMonth === 1) {
-      lines.push({ id: connection.id + ':' + isoDate + ':in', date: isoDate, direction: 'credit', currency: 'INR', amount: 250000, narration: 'NEFT CR/PARENT TRANSFER' });
+      lines.push({ id: connection.id + ':' + isoDate + ':in', date: isoDate, direction: 'credit', currency: 'INR', amount: monthlyFamilyTransfer(student, isoDate.slice(0, 7)), narration: 'NEFT CR/PARENT TRANSFER' });
     }
     if (dayOfMonth === 2 && student.usualTransfer) {
       lines.push({ id: connection.id + ':' + isoDate + ':wise', date: isoDate, direction: 'debit', currency: 'INR',
         amount: Math.round(student.usualTransfer * student.rupeeRate), narration: 'LRS OUTWARD/WISE/S0305 LIVING COSTS/SELF ' + student.currencyCode });
     }
+    (student.manualRemittances || []).filter(function (remittance) { return remittance.date === isoDate; }).forEach(function (remittance) {
+      var purposeCode = remittance.purpose === 'medical' ? 'S0304 MEDICAL' : 'S0305 EDUCATION';
+      lines.push({ id: connection.id + ':' + isoDate + ':lrs:' + remittance.id, date: isoDate, direction: 'debit', currency: 'INR',
+        amount: Math.round(remittance.amountInr), narration: 'LRS OUTWARD/NETBANKING/' + purposeCode + (remittance.loanFunded ? '/EDU LOAN DISB' : '') });
+    });
     if (dayOfMonth === 10 && (month === 8 || month === 0)) {
       lines.push({ id: connection.id + ':' + isoDate + ':feesin', date: isoDate, direction: 'credit', currency: 'INR',
         amount: student.tuition || 640000, narration: fundedByLoan ? 'NEFT CR/EDU LOAN DISBURSAL' : 'NEFT CR/PARENT TRANSFER FEES' });
@@ -244,7 +268,7 @@ export function indianStatement(connection: BankConnection, fromIso: string, toI
   lines.filter(function (line) { return line.direction === 'debit'; }).forEach(function (line) {
     var year = financialYearOf(parseIsoDate(line.date));
     (remittancesByYear[year] = remittancesByYear[year] || []).push({
-      id: line.id, date: line.date, amountInr: line.amount, purpose: 'education', loanFunded: /EDU LOAN/.test(line.narration)
+      id: line.id, date: line.date, amountInr: line.amount, purpose: /S0304|MEDICAL/.test(line.narration) ? 'medical' : 'education', loanFunded: /EDU LOAN/.test(line.narration)
     });
   });
   Object.keys(remittancesByYear).forEach(function (year) {
@@ -254,6 +278,8 @@ export function indianStatement(connection: BankConnection, fromIso: string, toI
       }
     });
   });
+
+  lines = lines.filter(function (line) { return line.date >= fromIso && line.date <= toIso; });
 
   (student.loans || []).forEach(function (loan) {
     (loan.payments || []).forEach(function (payment) {
@@ -289,8 +315,9 @@ export function openingBalance(connection, anchorIso, student) {
 }
 
 export function fetchBankBalance(connection: BankConnection, asOfIso: string, student: StudentFeed): BankBalance {
-  var asOf = parseIsoDate(asOfIso);
-  var anchorIso = toIsoDate(new Date(asOf.getFullYear(), asOf.getMonth() - 1, 1));
+  var connected = connection.connectedAt ? new Date(connection.connectedAt) : parseIsoDate(asOfIso);
+  var anchorIso = toIsoDate(new Date(connected.getFullYear(), connected.getMonth() - 2, 1));
+  if (anchorIso > asOfIso) anchorIso = asOfIso.slice(0, 8) + '01';
   var lines = fetchBankStatement(connection, anchorIso, asOfIso, student);
   var movementByDay = {};
   lines.forEach(function (line) {

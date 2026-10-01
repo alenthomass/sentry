@@ -63,6 +63,8 @@ export interface StudentFeed {
   university?: string;
   tuition?: number;
   share?: number;
+  manualPayments?: Array<{ id: string; date: string; amount: number; note?: string }>;
+  manualRemittances?: Array<{ id: string; date: string; amountInr: number; purpose?: string; loanFunded?: boolean }>;
   loans?: Array<{ id: string; name: string; payments: Array<{ date: string; amount: number }> }>;
 }
 

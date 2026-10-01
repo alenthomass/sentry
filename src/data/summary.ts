@@ -63,6 +63,14 @@ export function buildSummary(data) {
 
 
 // ── START: Spending and forecast (Adeeth + Sidharth) ───────────────────────
+export function paymentsToReview(ledgers) {
+  var waiting = [];
+  Object.keys(ledgers || {}).forEach(function (month) {
+    ledgers[month].forEach(function (expense) { if (expense.needsReview) waiting.push(expense); });
+  });
+  return waiting.sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+}
+
 export function summariseSpending(data, profile, money, rates, dayOfMonth, monthLength, thisMonth) {
   var expenses = (data.ledgers[thisMonth] || []).slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
 
@@ -108,7 +116,8 @@ export function summariseSpending(data, profile, money, rates, dayOfMonth, month
   var totalSpent = sumOf(categories.map(function (category) { return category.spent; }));
   return {
     expenses: expenses,
-    needsReviewCount: expenses.filter(function (expense) { return expense.needsReview; }).length,
+    toReview: paymentsToReview(data.ledgers),
+    needsReviewCount: paymentsToReview(data.ledgers).length,
     categories: categories,
     totalBudget: totalBudget,
     totalSpent: totalSpent,

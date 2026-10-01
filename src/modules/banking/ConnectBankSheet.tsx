@@ -77,7 +77,8 @@ export function bankingBindings(app) {
       logo: bank.logo,
       logoStyle: bankLogoStyle(bank.color),
       title: bank.name + ' ' + accountNumber(bank),
-      details: bank.region === 'india' ? 'Remittances · INR · Account Aggregator' : 'Spending · ' + bank.currency + ' · Open banking',
+      details: (bank.balance ? 'Balance ' + formatBankAmount(bank.balance, bank.balance.current, money) + ' · ' : '') +
+        (bank.region === 'india' ? 'Remittances · Account Aggregator' : 'Spending · Open banking'),
       chipText: ui.syncing ? 'Syncing…' : 'Synced ' + timeAgo(bank.lastSync),
       chipStyle: greenChip,
       chipAction: function () { syncBanks(app, [bank]); },

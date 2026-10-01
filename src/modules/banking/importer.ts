@@ -78,9 +78,10 @@ export function importBankStatement(current, connection, lines, options) {
   Object.keys(current.ledgers || {}).forEach(function (month) { ledgers[month] = current.ledgers[month].slice(); });
   var remittances = (current.remittances || []).slice();
   var loans = (current.loans || []).map(function (loan) { return Object.assign({}, loan, { payments: Object.assign({}, loan.payments || {}) }); });
-  var stats = { lines: lines.length, expenses: 0, autoFiled: 0, needReview: 0, linkedToTyped: 0, topUps: 0, remittances: 0, tcsMatched: 0, emisMatched: 0, alreadyHad: 0, monthsRebuilt: [] };
+  var stats = { lines: lines.length, expenses: 0, autoFiled: 0, needReview: 0, linkedToTyped: 0, topUps: 0, remittances: 0, remittancesLinked: 0, tcsMatched: 0, emisMatched: 0, alreadyHad: 0, monthsRebuilt: [] };
 
   var alreadyImported = {};
+  (options.dismissedLines || []).forEach(function (lineId) { alreadyImported[lineId] = true; });
   Object.keys(ledgers).forEach(function (month) { ledgers[month].forEach(function (expense) { if (expense.bankLineId) alreadyImported[expense.bankLineId] = true; }); });
   remittances.forEach(function (remittance) {
     if (remittance.bankLineId) alreadyImported[remittance.bankLineId] = true;
@@ -141,6 +142,16 @@ export function importBankStatement(current, connection, lines, options) {
     if (line.direction === 'credit') return;
     if (/TCS U\/S 206C/.test(text)) return;
     if (/LRS|SWIFT OUT|OUTWARD/.test(text)) {
+      var typedIndex = remittances.findIndex(function (remittance) {
+        return !remittance.bankLineId && !remittance.fromBank && Math.abs(remittance.amountInr - line.amount) < 1 &&
+          Math.abs(daysBetween(parseIsoDate(remittance.date), parseIsoDate(line.date))) <= 2;
+      });
+      if (typedIndex >= 0) {
+        var typed = remittances[typedIndex];
+        remittances[typedIndex] = Object.assign({}, typed, { bankLineId: line.id, bankId: connection.id, bank: typed.bank || connection.name, linked: true });
+        stats.remittancesLinked++;
+        return;
+      }
       remittances.push({
         id: 'b' + line.id.replace(/[^a-z0-9]/gi, ''), bankLineId: line.id, bankId: connection.id, fromBank: true,
         date: line.date, amountInr: line.amount, purpose: /MEDICAL|S0304/.test(text) ? 'medical' : 'education',

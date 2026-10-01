@@ -33,7 +33,7 @@ export function addExpenseSheet(app) {
     var ledger = Store.read(documentId) || { txns: [] };
     var expense = {
       id: Store.newId(), date: toIsoDate(startOfToday()), cat: category.id, amount: Math.round(amount * 100) / 100,
-      cur: money.code, rate: money.rate, note: String(state.note || '').trim()
+      cur: money.code, rate: money.rate, note: String(state.note || '').trim(), createdAt: new Date().toISOString()
     };
     Store.save(documentId, { txns: ledger.txns.concat([expense]) });
     app.reloadData();

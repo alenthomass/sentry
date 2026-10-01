@@ -53,7 +53,26 @@ export var BankSync = (function () {
 
 
   // ── START: What the mock bank needs to know about the student ────────────
-  function describeStudent(profile, loans): StudentFeed {
+  function paymentsTypedByHand(ledgers, currencyCode) {
+    var payments = [];
+    Object.keys(ledgers || {}).forEach(function (month) {
+      ledgers[month].forEach(function (expense) {
+        var typedByHand = !expense.bankLineId || String(expense.bankLineId).indexOf(':card:' + expense.id) >= 0;
+        if (typedByHand && expense.cur === currencyCode) payments.push({ id: expense.id, date: expense.date, amount: expense.amount, note: expense.note || '' });
+      });
+    });
+    return payments;
+  }
+
+  function remittancesTypedByHand(remittances) {
+    return (remittances || []).filter(function (remittance) {
+      return !remittance.fromBank && (!remittance.bankLineId || String(remittance.bankLineId).indexOf(':lrs:' + remittance.id) >= 0);
+    }).map(function (remittance) {
+      return { id: remittance.id, date: remittance.date, amountInr: remittance.amountInr, purpose: remittance.purpose, loanFunded: !!remittance.loanFunded };
+    });
+  }
+
+  function describeStudent(profile, loans, ledgers?, remittances?): StudentFeed {
     var country = findCountry(profile.country);
     return {
       currencyCode: country.code,
@@ -63,6 +82,8 @@ export var BankSync = (function () {
       budgets: profile.budgets,
       funding: profile.funding,
       university: profile.uni,
+      manualPayments: paymentsTypedByHand(ledgers, country.code),
+      manualRemittances: remittancesTypedByHand(remittances),
       loans: (loans || []).map(function (loan) {
         return {
           id: loan.id,
@@ -104,7 +125,7 @@ export var BankSync = (function () {
 
     var before = currentData();
     var range = dateRangeToFetch(connection, startOfToday());
-    var student = describeStudent(profile, before.loans);
+    var student = describeStudent(profile, before.loans, before.ledgers, before.remittances);
     var abroadBanks = (profile.banks || []).filter(function (bank) { return bank.region === 'abroad'; });
     var isExtraCard = connection.region === 'abroad' && abroadBanks.length && abroadBanks[0].id !== connection.id;
     if (isExtraCard) student.share = 0.25;
@@ -116,7 +137,8 @@ export var BankSync = (function () {
       rules: profile.categoryRules || {},
       rupeeRate: rupeesPerUnit(country.code, profile.rateOverrides),
       currencyCode: country.code,
-      historyFrom: range.historyFrom
+      historyFrom: range.historyFrom,
+      dismissedLines: profile.dismissedBankLines || []
     });
 
     var saves = [];
@@ -124,7 +146,7 @@ export var BankSync = (function () {
       var changed = JSON.stringify(result.data.ledgers[month]) !== JSON.stringify(before.ledgers[month] || []);
       if (changed) saves.push(Store.save('ledger-' + month, { txns: result.data.ledgers[month] }));
     });
-    if (result.stats.remittances || result.stats.tcsMatched) saves.push(Store.save('remits', { items: result.data.remittances }));
+    if (result.stats.remittances || result.stats.remittancesLinked || result.stats.tcsMatched) saves.push(Store.save('remits', { items: result.data.remittances }));
     if (result.stats.emisMatched) saves.push(Store.save('loans', { items: result.data.loans }));
     if (result.stats.monthsRebuilt.length) saves.push(Store.save('history', result.data.history));
 

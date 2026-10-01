@@ -69,7 +69,7 @@ export function expenseListBindings(app) {
   var reviewing = ui.expenseFilter === 'review';
   var rows = categoryRows(app);
 
-  var matching = summary.expenses.filter(function (expense) {
+  var matching = (reviewing ? summary.toReview : summary.expenses).filter(function (expense) {
     var inGroup = ui.categoryGroup === 'all' || findCategory(expense.cat).group === ui.categoryGroup;
     return inGroup && (!reviewing || expense.needsReview);
   });
@@ -79,8 +79,9 @@ export function expenseListBindings(app) {
     var documentId = 'ledger-' + expense.date.slice(0, 7);
     var ledger = Store.read(documentId) || { txns: [] };
     Store.save(documentId, { txns: ledger.txns.filter(function (item) { return item.id !== expense.id; }) });
-    app.reloadData();
-    app.toast('Expense deleted · forecast updated');
+    if (expense.bankLineId) app.saveProfile({ dismissedBankLines: (app.profile.dismissedBankLines || []).concat([expense.bankLineId]) });
+    else app.reloadData();
+    app.toast(expense.bankLineId ? 'Payment removed · it won’t come back on the next sync' : 'Expense deleted · forecast updated');
   }
 
   var expenseRows = visible.map(function (expense, index) {

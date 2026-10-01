@@ -78,6 +78,39 @@ test('balance: matches the statement, stays deterministic, returns a 30-day tren
   assert.ok(india.trend.every((point) => point.amount > 0));
 });
 
+test('an expense typed by hand lowers the bank balance and is linked, not counted twice, on sync', () => {
+  const bank = createBankConnection('monzo', 'GBP', 'hand1');
+  const student = { currencyCode: 'GBP', budgets: splitBudget(1250), usualTransfer: 1200, name: 'A' };
+  const typed = { id: 'typed1', date: todayIso, cat: 'eatout', amount: 23.45, cur: 'GBP', note: 'Lunch' };
+  const withTyped = { ...student, manualPayments: [{ id: typed.id, date: typed.date, amount: typed.amount, note: typed.note }] };
+  const before = fetchBankBalance(bank, todayIso, student).current;
+  const after = fetchBankBalance(bank, todayIso, withTyped).current;
+  assert.ok(Math.abs(before - after - 23.45) < 0.01);
+  const data = emptyData();
+  data.ledgers[todayIso.slice(0, 7)] = [typed];
+  const result = importBankStatement(data, bank, fetchBankStatement(bank, todayIso, todayIso, withTyped), { rules: {}, rupeeRate: 118, currencyCode: 'GBP' });
+  const ledger = result.data.ledgers[todayIso.slice(0, 7)];
+  assert.strictEqual(ledger.filter((expense) => Math.abs(expense.amount - 23.45) < 0.001).length, 1);
+  assert.ok(ledger.find((expense) => expense.id === 'typed1').bankLineId);
+});
+
+test('a remittance typed by hand is linked to the bank line, and a dismissed bank line never comes back', () => {
+  const bank = createBankConnection('hdfc', 'GBP', 'hand2');
+  const typed = { id: 'r1', date: todayIso, amountInr: 150000, purpose: 'education', loanFunded: false, a2: true };
+  const student = { currencyCode: 'GBP', rupeeRate: 118.4, manualRemittances: [{ id: 'r1', date: todayIso, amountInr: 150000, purpose: 'education' }] };
+  const lines = fetchBankStatement(bank, todayIso, todayIso, student);
+  const data = emptyData();
+  data.remittances = [typed];
+  const result = importBankStatement(data, bank, lines, { rules: {} });
+  assert.strictEqual(result.data.remittances.filter((item) => item.amountInr === 150000).length, 1);
+  assert.ok(result.data.remittances.find((item) => item.id === 'r1').bankLineId);
+
+  const card = createBankConnection('monzo', 'GBP', 'hand3');
+  const cardLines = fetchBankStatement(card, todayIso, todayIso, { currencyCode: 'GBP', budgets: splitBudget(5000), manualPayments: [{ id: 'x', date: todayIso, amount: 9.99 }] });
+  const skipped = importBankStatement(emptyData(), card, cardLines, { rules: {}, rupeeRate: 118, currencyCode: 'GBP', dismissedLines: cardLines.map((line) => line.id) });
+  assert.strictEqual(skipped.stats.expenses, 0);
+});
+
 test('"always use this" refiles every payment from that shop', () => {
   const ledgers = { '2026-09': [{ id: 'a', merchant: 'X', cat: 'shopping', needsReview: true }, { id: 'b', merchant: 'X', cat: 'shopping', needsReview: true }, { id: 'c', merchant: 'Y', cat: 'shopping' }] };
   const updated = changeExpenseCategory(ledgers, 'a', 'course', 'X', true)['2026-09'];

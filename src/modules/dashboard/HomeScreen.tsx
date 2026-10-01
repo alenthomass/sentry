@@ -6,7 +6,7 @@
    closest to their budget.
    ============================================================================ */
 
-import { addDays, daysBetween, formatDayMonth, formatRupees, formatRupeesShort, MONTH_NAMES_LONG, parseIsoDate, pluralize, WEEKDAY_NAMES } from '../../shared/dates';
+import { addDays, daysBetween, formatDayMonth, formatRupees, formatRupeesShort, MONTH_NAMES_LONG, parseIsoDate, pluralize, toIsoDate, WEEKDAY_NAMES } from '../../shared/dates';
 import { sumOf } from '../../shared/maths';
 import { bankLogoStyle, barStyle, CATEGORY_ICONS, categoryIcon, css, rowStyle, TONES, type ViewProps } from '../../app/styles';
 import { CLOSED_OVERLAYS } from '../../app/ui-state';
@@ -44,6 +44,41 @@ export function sparkline(points: Array<{ amount: number }> | null, width?: numb
   return { line: line, area: line + ' L' + width + ' ' + height + ' L0 ' + height + ' Z', endX: last[0], endY: last[1] };
 }
 
+export function loggedSinceSync(ledgers, bank) {
+  if (!bank || !bank.balance) return 0;
+  var total = 0;
+  Object.keys(ledgers || {}).forEach(function (month) {
+    ledgers[month].forEach(function (expense) {
+      if (expense.bankLineId || expense.cur !== bank.balance.currency) return;
+      var notSyncedYet = expense.createdAt ? !bank.lastSync || expense.createdAt > bank.lastSync : expense.date > bank.balance.asOf;
+      if (notSyncedYet) total += expense.amount;
+    });
+  });
+  return Math.round(total * 100) / 100;
+}
+
+export function remittancesLoggedSinceSync(complianceItems, bank) {
+  if (!bank || !bank.balance) return 0;
+  return sumOf((complianceItems || []).filter(function (remittance) {
+    if (remittance.bankLineId || remittance.fromBank) return false;
+    return remittance.createdAt ? !bank.lastSync || remittance.createdAt > bank.lastSync : remittance.date > bank.balance.asOf;
+  }).map(function (remittance) { return remittance.amountInr + (remittance.tcs || 0); }));
+}
+
+export function withLatestPoint(trend, latest) {
+  if (!trend || !trend.length) return trend;
+  return trend.slice(0, -1).concat([{ date: trend[trend.length - 1].date, amount: latest }]);
+}
+
+export function everyExpense(ledgers) {
+  var all = [];
+  Object.keys(ledgers || {}).forEach(function (month) { all = all.concat(ledgers[month]); });
+  return all.sort(function (a, b) {
+    if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+    return (b.createdAt || '') < (a.createdAt || '') ? -1 : (b.createdAt || '') > (a.createdAt || '') ? 1 : 0;
+  });
+}
+
 export function balanceOverview(app) {
   var summary = app.summary;
   var money = app.money;
@@ -52,10 +87,14 @@ export function balanceOverview(app) {
   var spendingAccounts = withBalance.filter(function (bank) { return bank.region === 'abroad'; });
   var indianAccounts = withBalance.filter(function (bank) { return bank.region === 'india'; });
 
-  var spendable = sumOf(spendingAccounts.map(function (bank) { return balanceInLocalCurrency(bank.balance, bank.balance.available, money); }));
-  var pending = sumOf(spendingAccounts.map(function (bank) { return balanceInLocalCurrency(bank.balance, bank.balance.pending || 0, money); }));
-  var inIndia = sumOf(indianAccounts.map(function (bank) { return bank.balance.current; }));
-  var totalLocal = sumOf(withBalance.map(function (bank) { return balanceInLocalCurrency(bank.balance, bank.balance.current, money); }));
+  var mainCard = spendingAccounts[0];
+  var logged = loggedSinceSync(summary.data.ledgers, mainCard);
+  var spendable = sumOf(spendingAccounts.map(function (bank) { return balanceInLocalCurrency(bank.balance, bank.balance.available, money); })) - logged;
+  var pending = sumOf(spendingAccounts.map(function (bank) { return balanceInLocalCurrency(bank.balance, bank.balance.pending || 0, money); })) + logged;
+  var indiaMain = indianAccounts[0];
+  var loggedInIndia = remittancesLoggedSinceSync(summary.compliance.items, indiaMain);
+  var inIndia = sumOf(indianAccounts.map(function (bank) { return bank.balance.current; })) - loggedInIndia;
+  var totalLocal = sumOf(withBalance.map(function (bank) { return balanceInLocalCurrency(bank.balance, bank.balance.current, money); })) - logged - loggedInIndia / money.rate;
   var oldestAsOf = withBalance.map(function (bank) { return bank.balance.asOf; }).sort()[0];
   var newestSync = banks.map(function (bank) { return bank.lastSync; }).filter(Boolean).sort().slice(-1)[0];
 
@@ -64,6 +103,10 @@ export function balanceOverview(app) {
     withBalance: withBalance,
     spendingAccounts: spendingAccounts,
     indianAccounts: indianAccounts,
+    mainCard: mainCard,
+    logged: logged,
+    indiaMain: indiaMain,
+    loggedInIndia: loggedInIndia,
     spendable: spendable,
     pending: pending,
     inIndia: inIndia,
@@ -125,14 +168,20 @@ export function homeScreen(app) {
   var cashRoom = hasSpendingBalance ? Math.max(0, balances.spendable - unpaidBills) : budgetRoom;
   var safePerDay = Math.min(budgetRoom, cashRoom) / daysRemaining;
   var dailyPace = summary.dayOfMonth ? summary.totalSpent / summary.dayOfMonth : 0;
-  var runwayDays = hasSpendingBalance && dailyPace > 0 ? Math.floor(balances.spendable / dailyPace) : null;
+  var allExpenses = everyExpense(summary.data.ledgers);
+  var thirtyDaysAgo = toIsoDate(addDays(summary.today, -30));
+  var spentLast30Days = sumOf(allExpenses.filter(function (expense) { return expense.date > thirtyDaysAgo; })
+    .map(function (expense) { return amountInCurrency(expense, money.code, profile.rateOverrides); }));
+  var recentPace = spentLast30Days / 30;
+  var runwayDays = hasSpendingBalance && recentPace > 0 ? Math.floor(balances.spendable / recentPace) : null;
 
   var hero;
   if (hasSpendingBalance) {
     var primary = balances.spendingAccounts[0];
-    var trend = sparkline(primary.balance.trend, 300, 58);
+    var primaryNow = primary.balance.current - balances.logged;
+    var trend = sparkline(withLatestPoint(primary.balance.trend, primaryNow), 300, 58);
     var firstPoint = primary.balance.trend[0];
-    var change = firstPoint ? primary.balance.current - firstPoint.amount : 0;
+    var change = firstPoint ? primaryNow - firstPoint.amount : 0;
     hero = {
       label: 'Available to spend',
       amount: money.exact(balances.spendable),
@@ -149,7 +198,7 @@ export function homeScreen(app) {
     };
   } else if (hasBalance) {
     var indian = balances.indianAccounts[0];
-    var indianTrend = sparkline(indian.balance.trend, 300, 58);
+    var indianTrend = sparkline(withLatestPoint(indian.balance.trend, balances.inIndia), 300, 58);
     hero = {
       label: 'Balance in India',
       amount: formatRupees(balances.inIndia),
@@ -185,17 +234,20 @@ export function homeScreen(app) {
   var heroStatus = !balances.banks.length ? 'Connect a bank to see your live balance'
     : syncing ? 'Syncing with your bank…'
     : !hasBalance ? 'Sync to fetch your live balance'
+    : hasSpendingBalance && balances.logged > 0 ? 'Includes ' + money.exact(balances.logged) + ' you logged since the last sync'
+    : !hasSpendingBalance && balances.loggedInIndia > 0 ? 'Includes ' + formatRupees(balances.loggedInIndia) + ' you logged since the last sync'
     : 'Balance as of ' + formatDayMonth(balances.asOf) + ' · synced ' + timeAgo(balances.lastSync);
 
   var accountCards = balances.banks.map(function (bank) {
+    var loggedHere = bank === balances.mainCard ? balances.logged : bank === balances.indiaMain ? balances.loggedInIndia : 0;
     return {
       logo: bank.logo,
       logoStyle: bankLogoStyle(bank.color, 30),
       name: shortBankName(bank),
       number: accountNumber(bank),
-      balance: bank.balance ? formatBankAmount(bank.balance, bank.balance.current, money) : 'Sync to see',
+      balance: bank.balance ? formatBankAmount(bank.balance, bank.balance.current - loggedHere, money) : 'Sync to see',
       balanceStyle: 'font-size:' + (bank.balance ? '17' : '13') + 'px;font-weight:800;color:' + (bank.balance ? '#0B0620' : '#8552FF') + ';margin-top:12px;letter-spacing:-0.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis',
-      caption: bank.region === 'india' ? 'Remitting · INR' : 'Spending · ' + bank.currency,
+      caption: loggedHere > 0 ? formatBankAmount(bank.balance, loggedHere, money) + ' pending' : bank.region === 'india' ? 'Remitting · INR' : 'Spending · ' + bank.currency,
       open: app.goTo('account')
     };
   });
@@ -211,7 +263,8 @@ export function homeScreen(app) {
       amount: formatRupees(payment.pay), amountSub: money.fromRupees(payment.pay), open: app.goTo('emi')
     });
   });
-  if (scheduled) {
+  var scheduledAhead = scheduled && parseIsoDate(scheduled.date) >= summary.today;
+  if (scheduledAhead) {
     var transferDate = parseIsoDate(scheduled.date);
     comingUp.push({
       date: transferDate, icon: 'transfer', title: 'Transfer from India', sub: 'Scheduled with the timing advisor',
@@ -244,7 +297,7 @@ export function homeScreen(app) {
     };
   });
 
-  var recent = summary.expenses.slice(0, 5).map(function (expense, index, list) {
+  var recent = allExpenses.slice(0, 5).map(function (expense, index, list) {
     var category = findCategory(expense.cat);
     var amount = amountInCurrency(expense, money.code, profile.rateOverrides);
     return Object.assign(categoryIcon(expense.cat), {
@@ -348,10 +401,10 @@ export function homeScreen(app) {
     alertSummary: alerts.length ? alerts[0].name + ' · ' + topAlertText : 'All categories tracking under budget',
     flagCount: flags.length + ' open',
     flagSummary: flags.length ? flags.slice(0, 2).map(function (flag) { return flag.text; }).join(' · ') : 'Nothing open this FY',
-    transferSummary: scheduled
+    transferSummary: scheduledAhead
       ? 'Transfer scheduled for ' + formatDayMonth(parseIsoDate(scheduled.date))
       : money.code + '/INR ' + timing.todaysRate.toFixed(2) + ' · ' + (timing.percentVsAverage > 0 ? 'above' : 'below') + ' 30-day avg',
-    transferAction: scheduled ? 'Scheduled' : timing.recommended.id === 'now' ? 'Send now' : 'Wait',
+    transferAction: scheduledAhead ? 'Scheduled' : timing.recommended.id === 'now' ? 'Send now' : 'Wait',
 
     homeHasUpcoming: homeUpcomingRows.length > 0,
     homeUpcomingRows: homeUpcomingRows,
@@ -360,8 +413,8 @@ export function homeScreen(app) {
     noRecent: recent.length === 0,
     recentRows: recent,
     recentEmptyText: balances.banks.some(function (bank) { return bank.region === 'abroad'; })
-      ? 'No payments yet this month. Sync to pull in the latest.'
-      : 'Nothing logged this month. Tap + to add an expense or connect your card.',
+      ? 'No payments yet. Sync to pull in the latest.'
+      : 'Nothing logged yet. Tap + to add an expense or connect your card.',
 
     categoryCount: summary.categories.length,
     topCategories: categoryRows(app).sort(function (a, b) { return b.percent - a.percent; }).slice(0, 3)

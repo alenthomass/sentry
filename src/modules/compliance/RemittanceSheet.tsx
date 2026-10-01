@@ -45,7 +45,8 @@ export function remittanceForm(app, values) {
       var items = (Store.read('remits') || {}).items || [];
       items = items.concat([{
         id: Store.newId(), date: values.date, amountInr: Math.round(amount), purpose: purpose, loanFunded: paidByLoan,
-        usdRate: RUPEES_PER_USD, a2: true, in26as: false, bank: String(values.bank || '').trim(), note: String(values.note || '').trim()
+        usdRate: RUPEES_PER_USD, a2: true, in26as: false, bank: String(values.bank || '').trim(), note: String(values.note || '').trim(),
+        createdAt: new Date().toISOString()
       }]);
       Store.save('remits', { items: items });
       app.reloadData();

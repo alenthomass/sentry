@@ -206,8 +206,10 @@ export function remittanceList(app) {
   function deleteRemittance(remittance) {
     var saved = (Store.read('remits') || {}).items || [];
     Store.save('remits', { items: saved.filter(function (item) { return item.id !== remittance.id; }) });
-    app.reloadData();
-    app.toast('Remittance deleted · compliance re-checked');
+    var bankLines = [remittance.bankLineId, remittance.tcsLineId].filter(Boolean);
+    if (bankLines.length) app.saveProfile({ dismissedBankLines: (app.profile.dismissedBankLines || []).concat(bankLines) });
+    else app.reloadData();
+    app.toast(bankLines.length ? 'Remittance removed · it won’t come back on the next sync' : 'Remittance deleted · compliance re-checked');
   }
 
   return items.map(function (remittance, index) {
