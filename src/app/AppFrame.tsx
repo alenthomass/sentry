@@ -28,7 +28,7 @@ export function AppFrame({ v }: ViewProps) {
   return (
     <div style={{ height: '100dvh', display: 'flex', justifyContent: 'center', background: '#EFE9FA', overflow: 'hidden' }}>
       <div style={{ width: '100%', maxWidth: '460px', height: '100dvh', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg,#C0A2FF 0%,#DAC7FF 12%,#EFE8FF 26%,#F5F4F9 42%,#F5F4F9 100%)' }}>
-        <div data-scroll-host="1" style={{ flex: '1', minHeight: '0', overflowY: 'auto', scrollbarWidth: 'none', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <div data-scroll-host="1" style={{ flex: '1', minHeight: '0', overflowY: 'auto', scrollbarWidth: 'none' }}>
           {v.onLogin ? <SignInView v={v} /> : null}
           {v.onRegister ? <RegisterView v={v} /> : null}
           {v.onHome ? <HomeView v={v} /> : null}
@@ -62,7 +62,7 @@ export function AppFrame({ v }: ViewProps) {
 // ── START: Toast and tab bar ───────────────────────────────────────────────
 function ToastView({ v }: ViewProps) {
   return (
-    <div style={{ position: 'absolute', left: '16px', right: '16px', bottom: 'calc(100px + env(safe-area-inset-bottom))', display: 'flex', alignItems: 'center', gap: '10px', background: '#1B1233', borderRadius: '18px', padding: '14px 16px', boxShadow: '0 12px 30px rgba(5,0,17,0.3)', zIndex: '45', animation: 'toastIn .28s cubic-bezier(.22,.9,.3,1) both' }}>
+    <div style={{ position: 'absolute', left: '16px', right: '16px', bottom: 'calc(66px + max(env(safe-area-inset-bottom), 14px))', display: 'flex', alignItems: 'center', gap: '10px', background: '#1B1233', borderRadius: '18px', padding: '14px 16px', boxShadow: '0 12px 30px rgba(5,0,17,0.3)', zIndex: '45', animation: 'toastIn .28s cubic-bezier(.22,.9,.3,1) both' }}>
       <span style={{ width: '24px', height: '24px', borderRadius: '8px', background: 'rgba(171,227,158,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: '0' }}>
         <svg width="13" height="13" viewBox="0 0 20 20" fill="none">
           <path d="M4.5 10.5l3.5 3.5 7.5-7.5" stroke="#ABE39E" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -77,7 +77,7 @@ function ToastView({ v }: ViewProps) {
 function TabBarView({ v }: ViewProps) {
   return (
     <>
-      <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', height: 'calc(86px + env(safe-area-inset-bottom))', boxSizing: 'border-box', background: '#FFFFFF', borderRadius: '26px 26px 0 0', boxShadow: '0 -6px 26px rgba(5,0,17,0.10)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 24px 0', zIndex: '30' }}>
+      <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', height: 'calc(52px + max(env(safe-area-inset-bottom), 14px))', boxSizing: 'border-box', background: '#FFFFFF', borderRadius: '26px 26px 0 0', boxShadow: '0 -6px 26px rgba(5,0,17,0.10)', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '12px 24px 0', zIndex: '30' }}>
         <div onClick={v.goHome} style={css(v.tabHome)}>
           <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
             <path d="M3.2 8.6L10 3l6.8 5.6V16a1 1 0 01-1 1h-3.4v-4.4H7.6V17H4.2a1 1 0 01-1-1V8.6z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
@@ -105,7 +105,7 @@ function TabBarView({ v }: ViewProps) {
           <span style={{ fontSize: '11px', fontWeight: 'inherit', color: 'currentColor' }}>Comply</span>
         </div>
       </div>
-      <div onClick={v.openSheet} style={{ position: 'absolute', bottom: 'calc(38px + env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', width: '60px', height: '60px', borderRadius: '30px', background: '#1B1233', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 24px rgba(27,18,51,0.4)', cursor: 'pointer', zIndex: '35' }}>
+      <div onClick={v.openSheet} style={{ position: 'absolute', bottom: 'calc(4px + max(env(safe-area-inset-bottom), 14px))', left: '50%', transform: 'translateX(-50%)', width: '60px', height: '60px', borderRadius: '30px', background: '#1B1233', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 24px rgba(27,18,51,0.4)', cursor: 'pointer', zIndex: '35' }}>
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
           <path d="M12 6.5v11M6.5 12h11" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" />
         </svg>
