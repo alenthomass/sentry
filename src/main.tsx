@@ -9,3 +9,8 @@ import './app/fonts.css';
 import './app/base.css';
 
 createRoot(document.getElementById('root')!).render(<SentryApp />);
+
+// Installable app: register the service worker on real websites only.
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !(window as any).claude) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+}
