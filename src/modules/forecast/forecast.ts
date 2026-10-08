@@ -113,7 +113,11 @@ export function buildForecastChart(forecast, budget, today, monthLength) {
     budgetLine: 'M0 ' + yFor(budget).toFixed(1) + 'h320',
     todayPoint: { x: xFor(today), y: yFor(forecast.spent) },
     crossPoint: forecast.breachDay ? { x: xFor(forecast.breachDay), y: yFor(budget) } : null,
-    tickDays: [1, Math.round(monthLength / 3), today, monthLength].filter(function (day, index, all) { return all.indexOf(day) === index; })
+    tickDays: [1, Math.round(monthLength / 3), Math.round(monthLength * 2 / 3), monthLength]
+      .filter(function (day) { return Math.abs(day - today) > 3; })
+      .concat([today])
+      .sort(function (a, b) { return a - b; })
+      .map(function (day) { return { day: day, percent: xFor(day) / 320 * 100 }; })
   };
 }
 // ── END: Chart paths (320 × 160 SVG) ───────────────────────────────────────

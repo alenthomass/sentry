@@ -102,7 +102,10 @@ export function forecastScreen(app) {
     todayY: chart.todayPoint.y.toFixed(1),
     crossX: chart.crossPoint ? chart.crossPoint.x.toFixed(1) : 0,
     crossY: chart.crossPoint ? chart.crossPoint.y.toFixed(1) : 0,
-    tickLabels: chart.tickDays.map(function (day) { return { label: day === summary.dayOfMonth ? 'Today' : 'Day ' + day }; })
+    tickLabels: chart.tickDays.map(function (tick, index, all) {
+      var shift = index === 0 ? '0' : index === all.length - 1 ? '-100%' : '-50%';
+      return { label: tick.day === summary.dayOfMonth ? 'Today' : 'Day ' + tick.day, style: { position: 'absolute', left: tick.percent + '%', transform: 'translateX(' + shift + ')', whiteSpace: 'nowrap' } };
+    })
   };
 }
 // ── END: Forecast screen ───────────────────────────────────────────────────
@@ -201,9 +204,9 @@ export function ForecastView({ v }: ViewProps) {
                 <circle cx={v.crossX} cy={v.crossY} r="5.5" fill="#F2544B" stroke="#FFFFFF" strokeWidth="2.5" style={{ transformBox: 'fill-box', transformOrigin: 'center', animation: 'blip 2.4s ease-in-out .8s infinite' }} />
               ) : null}
             </svg>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: '600', color: '#9A95AE', marginTop: '6px' }}>
+            <div style={{ position: 'relative', height: '14px', fontSize: '10px', fontWeight: '600', color: '#9A95AE', marginTop: '6px' }}>
               {(v.tickLabels || []).map((tick: any, i: number) => (
-                <span key={i}>{tick.label}</span>
+                <span key={i} style={tick.style}>{tick.label}</span>
               ))}
             </div>
           </div>

@@ -207,7 +207,7 @@ export function SettingsView({ v }: ViewProps) {
           </svg>
           <span style={{ fontSize: '14px', fontWeight: '800', color: '#C4342C' }}>Log out</span>
         </div>
-        <div style={{ fontSize: '11px', fontWeight: '600', color: '#9A95AE', textAlign: 'center' }}>Sentry 1.4.0 · {v.profileEmail}</div>
+        <div style={{ fontSize: '11px', fontWeight: '600', color: '#9A95AE', textAlign: 'center' }}>Sentry 2.0.0 · {v.profileEmail}</div>
       </div>
     </div>
   );
