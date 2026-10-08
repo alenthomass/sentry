@@ -14,3 +14,7 @@ createRoot(document.getElementById('root')!).render(<SentryApp />);
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !(window as any).claude) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
 }
+
+// App feel on iPhone: no pinch-zoom or double-tap zoom.
+['gesturestart', 'gesturechange'].forEach((name) => document.addEventListener(name, (e) => e.preventDefault(), { passive: false }));
+document.documentElement.style.touchAction = 'manipulation';

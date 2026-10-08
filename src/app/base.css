@@ -1,5 +1,5 @@
 
-  html, body { margin:0; overscroll-behavior:none; min-height:100%; background:#EFE9FA; font-family:'Manrope',-apple-system,sans-serif; -webkit-font-smoothing:antialiased; }
+  html, body { margin:0; overscroll-behavior:none; min-height:100%; background:#C0A2FF; font-family:'Manrope',-apple-system,sans-serif; -webkit-font-smoothing:antialiased; }
   a { color:#8552FF; text-decoration:none; }
   a:hover { color:#6B36F0; }
   ::-webkit-scrollbar { width:0; height:0; }
