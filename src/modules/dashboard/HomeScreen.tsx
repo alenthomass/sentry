@@ -427,7 +427,7 @@ export function homeScreen(app) {
 export function HomeView({ v }: ViewProps) {
   return (
     <div style={{ animation: 'scIn .34s cubic-bezier(.22,.85,.3,1) both' }} data-screen-label="Dashboard">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', padding: '44px 20px 6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '14px', padding: '12px 20px 6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '13px', minWidth: '0' }}>
           <div onClick={v.goAccount} role="button" aria-label="Account" style={{ width: '42px', height: '42px', borderRadius: '21px', background: '#1B1233', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 10px rgba(5,0,17,0.14)', cursor: 'pointer', flexShrink: '0' }}>
             <span style={{ fontSize: '14px', fontWeight: '800', color: '#ABE39E', letterSpacing: '0.02em' }}>{v.initials}</span>

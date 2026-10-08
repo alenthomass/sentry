@@ -115,7 +115,7 @@ export function transferTimingScreen(app) {
 export function TransferTimingView({ v }: ViewProps) {
   return (
     <div style={{ animation: 'scIn .34s cubic-bezier(.22,.85,.3,1) both' }} data-screen-label="Remittance Timing">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '64px 18px 14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '24px 18px 14px' }}>
         <div onClick={v.goHome} style={{ width: '40px', height: '40px', borderRadius: '20px', background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 10px rgba(5,0,17,0.08)', cursor: 'pointer' }}>
           <svg width="19" height="19" viewBox="0 0 20 20" fill="none">
             <path d="M12 5l-5 5 5 5" stroke="#0B0620" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

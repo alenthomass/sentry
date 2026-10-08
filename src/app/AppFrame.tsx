@@ -28,7 +28,7 @@ export function AppFrame({ v }: ViewProps) {
   return (
     <div style={{ height: '100dvh', display: 'flex', justifyContent: 'center', background: '#EFE9FA', overflow: 'hidden' }}>
       <div style={{ width: '100%', maxWidth: '460px', height: '100dvh', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg,#C0A2FF 0%,#DAC7FF 12%,#EFE8FF 26%,#F5F4F9 42%,#F5F4F9 100%)' }}>
-        <div data-scroll-host="1" style={{ flex: '1', minHeight: '0', overflowY: 'auto', scrollbarWidth: 'none' }}>
+        <div data-scroll-host="1" style={{ flex: '1', minHeight: '0', overflowY: 'auto', scrollbarWidth: 'none', paddingTop: 'max(env(safe-area-inset-top), 20px)', boxSizing: 'border-box' }}>
           {v.onLogin ? <SignInView v={v} /> : null}
           {v.onRegister ? <RegisterView v={v} /> : null}
           {v.onHome ? <HomeView v={v} /> : null}
