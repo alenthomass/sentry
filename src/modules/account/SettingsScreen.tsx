@@ -64,7 +64,7 @@ export function settingsScreen(app) {
   var confirming = app.ui.confirmAccountDeletion;
 
   function signedOutState() {
-    return Object.assign({ screen: 'login', armedDelete: null, confirmAccountDeletion: false, editingDetails: false, expenseFilter: 'all', categoryGroup: 'all', showAllExpenses: false, selectedLoan: 0 }, CLOSED_OVERLAYS);
+    return Object.assign({ screen: 'login', armedDelete: null, confirmAccountDeletion: false, expenseFilter: 'all', categoryGroup: 'all', showAllExpenses: false, selectedLoan: 0 }, CLOSED_OVERLAYS);
   }
 
   return {

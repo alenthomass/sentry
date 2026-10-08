@@ -17,7 +17,7 @@ These roll up into one **Compounding Risk Score** on the home screen.
 |---|---|---|
 | Balance card | Available to spend across your connected accounts abroad (or your Indian balance, or budget left when no bank is linked), a 30-day balance trend, **safe to spend per day**, **how long the balance lasts** at your current pace, and pending card payments | ↻ syncs every bank · *Connect bank* opens the connect flow |
 | Accounts | One card per connected account with its current balance | opens Account · *Add account* connects another bank |
-| Quick actions | Add expense · Send money (timing advisor) · Sync · Review (badge = payments waiting for a category) | |
+| Quick actions | Add expense · Timing (transfer timing advisor) · Sync · Review (badge = payments waiting for a category) | |
 | This month | Spent vs budget with a marker for where you *should* be today, left, projected month-end, daily average | opens Budget |
 | Risk score | Score, label, biggest driver, and a breakdown of all five parts with the compounding multiplier | *What’s driving it* expands the breakdown |
 | Needs attention | Overspend alerts, compliance flags, transfer window | opens Forecast / Comply / Timing advisor |

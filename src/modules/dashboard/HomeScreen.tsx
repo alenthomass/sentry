@@ -565,7 +565,7 @@ export function HomeView({ v }: ViewProps) {
                 <path d="M16.5 3.5L8.8 11.2M16.5 3.5l-4.8 13-2.9-5.3-5.3-2.9 13-4.8z" stroke="#8552FF" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
-            <span style={{ fontSize: '12px', fontWeight: '700', color: '#0B0620' }}>Send</span>
+            <span style={{ fontSize: '12px', fontWeight: '700', color: '#0B0620' }}>Timing</span>
           </div>
           <div onClick={v.heroSync} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '7px', cursor: 'pointer' }}>
             <span style={{ width: '54px', height: '54px', borderRadius: '18px', background: '#FFFFFF', boxShadow: '0 6px 18px rgba(5,0,17,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

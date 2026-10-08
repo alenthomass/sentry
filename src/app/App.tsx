@@ -67,7 +67,7 @@ export function SentryApp() {
 
   function goTo(screen) {
     return function () {
-      update(Object.assign({ screen: screen, armedDelete: null, editingDetails: false, confirmAccountDeletion: false }, CLOSED_OVERLAYS));
+      update(Object.assign({ screen: screen, armedDelete: null, confirmAccountDeletion: false }, CLOSED_OVERLAYS));
     };
   }
 

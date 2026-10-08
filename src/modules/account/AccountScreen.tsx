@@ -1,29 +1,16 @@
 /* ============================================================================
    Sentry · Account                                    (owner: Alen & Shaheen)
-   Profile card, country of study, personal details (with editing) and the
+   Profile card, country of study, personal details and the
    study and funding details.
    ============================================================================ */
 
 import { formatPercent } from '../../shared/dates';
 import { choiceChips, css, rowStyle, type ViewProps } from '../../app/styles';
-import { EMAIL_PATTERN, PAN_PATTERN } from './SignInScreen';
+import { PAN_PATTERN } from './SignInScreen';
 import { CATEGORIES } from '../budget/budget';
 import { findCountry, rupeesPerUnit, STUDY_COUNTRIES } from '../transfer-timing/currency';
 
-// ── START: Editable fields ─────────────────────────────────────────────────
-export var EDITABLE_DETAILS = [
-  { key: 'name', label: 'Full name', placeholder: 'Aarav Sharma' },
-  { key: 'email', label: 'Email', placeholder: 'you@university.ac.uk' },
-  { key: 'phone', label: 'Mobile', placeholder: '+91 98200 12345' },
-  { key: 'dob', label: 'Date of birth', placeholder: '14 Mar 2003' },
-  { key: 'pan', label: 'PAN', placeholder: 'ABCPS1234K' },
-  { key: 'passport', label: 'Passport', placeholder: 'Z4891907' },
-  { key: 'uni', label: 'University', placeholder: 'University College London' },
-  { key: 'courseEnds', label: 'Course ends', placeholder: 'Sep 2027' },
-  { key: 'localBank', label: 'Spending account abroad', placeholder: 'Monzo ••4417' },
-  { key: 'homeBank', label: 'Remitting bank in India', placeholder: 'HDFC Bank ••8802' }
-];
-
+// ── START: Detail rows ─────────────────────────────────────────────────────
 export function hidePassport(number) {
   return number && number.length > 5 ? number.slice(0, 3) + '••' + number.slice(-3) : number;
 }
@@ -33,7 +20,7 @@ export function detailRows(rows) {
     return { label: row.label, value: row.value || '—', rowStyle: rowStyle(index, rows.length, 'display:flex;align-items:center;justify-content:space-between;gap:14px;padding:15px 0') };
   });
 }
-// ── END: Editable fields ───────────────────────────────────────────────────
+// ── END: Detail rows ───────────────────────────────────────────────────────
 
 
 // ── START: Account screen ──────────────────────────────────────────────────
@@ -52,19 +39,6 @@ export function accountScreen(app) {
     CATEGORIES.forEach(function (category) { converted[category.id] = Math.round((profile.budgets[category.id] || 0) * money.rate / newRate); });
     app.saveProfile({ country: newCountry.id, budgets: converted, budgetCurrency: newCountry.code, transferAmount: newCountry.usualTransfer, scheduledTransfer: null });
     app.toast('Now showing local amounts in ' + newCountry.code + ' · ₹ figures unchanged');
-  }
-
-  function saveDetails() {
-    var draft = ui.detailsDraft;
-    var cleaned: Record<string, any> = {};
-    EDITABLE_DETAILS.forEach(function (field) { cleaned[field.key] = String(draft[field.key] == null ? '' : draft[field.key]).trim(); });
-    cleaned.pan = cleaned.pan.toUpperCase();
-    if (!cleaned.name) return app.toast('Name can’t be empty');
-    if (cleaned.pan && !PAN_PATTERN.test(cleaned.pan)) return app.toast('PAN should look like ABCPS1234K');
-    if (cleaned.email && !EMAIL_PATTERN.test(cleaned.email)) return app.toast('That email address doesn’t look right');
-    app.saveProfile(cleaned);
-    app.update({ editingDetails: false, detailsDraft: {} });
-    app.toast('Personal details updated');
   }
 
   return {
@@ -91,28 +65,6 @@ export function accountScreen(app) {
     ]),
     tcsBadgeText: summary.fundedByLoan ? (summary.hasLoanLetter ? '0% TCS applies' : '0% TCS eligible') : formatPercent(selfFundedRate * 100) + ' TCS applies',
     tcsBadge: 'font-size:12px;font-weight:700;color:' + (summary.fundedByLoan ? '#4E8A41' : '#C4342C'),
-
-    editing: ui.editingDetails,
-    notEditing: !ui.editingDetails,
-    editToggleLabel: ui.editingDetails ? 'Cancel' : 'Edit',
-    toggleEdit: function () { app.update({ editingDetails: !ui.editingDetails, detailsDraft: ui.editingDetails ? {} : Object.assign({}, profile) }); },
-    cancelEdit: function () { app.update({ editingDetails: false, detailsDraft: {} }); },
-    editFields: EDITABLE_DETAILS.map(function (field) {
-      return {
-        label: field.label,
-        placeholder: field.placeholder,
-        value: ui.detailsDraft[field.key] == null ? '' : ui.detailsDraft[field.key],
-        onChange: function (event) {
-          var value = event.target.value;
-          app.update(function (current) {
-            var draft = Object.assign({}, current.detailsDraft);
-            draft[field.key] = value;
-            return { detailsDraft: draft };
-          });
-        }
-      };
-    }),
-    saveEdit: saveDetails
   };
 }
 // ── END: Account screen ────────────────────────────────────────────────────
@@ -183,7 +135,6 @@ export function AccountView({ v }: ViewProps) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 4px 0', marginBottom: '-9px' }}>
           <span style={{ fontSize: '16px', fontWeight: '700', color: '#0B0620' }}>Personal details</span>
         </div>
-        {v.notEditing ? (
           <div style={{ background: '#FFFFFF', borderRadius: '22px', padding: '8px 18px', boxShadow: '0 6px 22px rgba(5,0,17,0.06)' }}>
             {(v.personalRows || []).map((item: any, i: number) => (
               <div key={i} style={css(item.rowStyle)}>
@@ -192,27 +143,6 @@ export function AccountView({ v }: ViewProps) {
               </div>
             ))}
           </div>
-        ) : null}
-        {v.editing ? (
-          <div style={{ background: '#FFFFFF', borderRadius: '22px', padding: '18px', boxShadow: '0 6px 22px rgba(5,0,17,0.06)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {(v.editFields || []).map((item: any, i: number) => (
-              <div key={i}>
-                <div style={{ fontSize: '11px', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase', color: '#7C7893', marginBottom: '8px' }}>
-                  {item.label}
-                </div>
-                <input value={item.value} onChange={item.onChange} placeholder={item.placeholder} style={{ width: '100%', boxSizing: 'border-box', border: '1.5px solid #E6E1F1', borderRadius: '16px', padding: '14px 16px', fontFamily: 'inherit', fontSize: '15px', fontWeight: '600', color: '#0B0620', background: '#FFFFFF', outline: 'none' }} />
-              </div>
-            ))}
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <span onClick={v.saveEdit} style={{ flex: '1', textAlign: 'center', padding: '15px', borderRadius: '999px', background: '#8552FF', fontSize: '14px', fontWeight: '700', color: '#FFFFFF', cursor: 'pointer' }}>
-                Save details
-              </span>
-              <span onClick={v.cancelEdit} style={{ textAlign: 'center', padding: '15px 20px', borderRadius: '999px', background: '#F3F1FA', fontSize: '14px', fontWeight: '700', color: '#4A4266', cursor: 'pointer' }}>
-                Cancel
-              </span>
-            </div>
-          </div>
-        ) : null}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 4px 0', marginBottom: '-9px' }}>
           <span style={{ fontSize: '16px', fontWeight: '700', color: '#0B0620' }}>Study & funding</span>
           <span style={css(v.tcsBadge)}>{v.tcsBadgeText}</span>

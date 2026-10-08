@@ -28,8 +28,6 @@ export var STARTING_STATE = Object.assign({
   selectedLoan: 0,
   showFullSchedule: false,
   armedDelete: null,
-  editingDetails: false,
-  detailsDraft: {},
   confirmAccountDeletion: false,
   showRiskParts: false,
   syncing: false
