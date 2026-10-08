@@ -26,7 +26,7 @@ import { TransferTimingView } from '../modules/transfer-timing/TransferTimingScr
 // ── START: Frame ───────────────────────────────────────────────────────────
 export function AppFrame({ v }: ViewProps) {
   return (
-    <div style={{ position: 'fixed', top: '0', right: '0', bottom: '0', left: '0', display: 'flex', justifyContent: 'center', background: '#EFE9FA', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', top: '0', right: '0', bottom: 'calc(0px - env(safe-area-inset-top))', left: '0', display: 'flex', justifyContent: 'center', background: '#EFE9FA', overflow: 'hidden' }}>
       <div style={{ width: '100%', maxWidth: '460px', height: '100%', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'linear-gradient(180deg,#C0A2FF 0%,#DAC7FF 12%,#EFE8FF 26%,#F5F4F9 42%,#F5F4F9 100%)' }}>
         <div data-scroll-host="1" style={{ flex: '1', minHeight: '0', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', paddingTop: 'max(env(safe-area-inset-top), 20px)', boxSizing: 'border-box' }}>
           {v.onLogin ? <SignInView v={v} /> : null}
@@ -42,7 +42,7 @@ export function AppFrame({ v }: ViewProps) {
           {v.onSettings ? <SettingsView v={v} /> : null}
         </div>
 
-        <div style={{ position: 'absolute', top: '0', left: '0', right: '0', height: 'env(safe-area-inset-top)', background: '#C0A2FF', zIndex: '40', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '0', left: '0', right: '0', height: 'env(safe-area-inset-top)', background: 'linear-gradient(180deg,#C0A2FF 0%,#DAC7FF 12%,#EFE8FF 26%,#F5F4F9 42%,#F5F4F9 100%)', backgroundSize: '100% 100vh', backgroundRepeat: 'no-repeat', zIndex: '40', pointerEvents: 'none' }} />
         {v.addExpenseOpen ? <AddExpenseSheetView v={v} /> : null}
         {v.budgetSheetOpen ? <MonthlyBudgetSheetView v={v} /> : null}
         {v.loanSheetOpen ? <LoanSheetView v={v} /> : null}
