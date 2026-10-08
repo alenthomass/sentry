@@ -182,7 +182,6 @@ export function AccountView({ v }: ViewProps) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 4px 0', marginBottom: '-9px' }}>
           <span style={{ fontSize: '16px', fontWeight: '700', color: '#0B0620' }}>Personal details</span>
-          <span onClick={v.toggleEdit} style={{ fontSize: '12px', fontWeight: '700', color: '#8552FF', cursor: 'pointer' }}>{v.editToggleLabel}</span>
         </div>
         {v.notEditing ? (
           <div style={{ background: '#FFFFFF', borderRadius: '22px', padding: '8px 18px', boxShadow: '0 6px 22px rgba(5,0,17,0.06)' }}>
